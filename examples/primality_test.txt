@@ -1,0 +1,29 @@
+# start loop index (ord('A'))
+seti $1 65
+# end loop index (ord('z'))
+seti $2 122
+
+# loop char that we will be printing
+mov $1 $3
+
+# the index char that our loop will check against
+# we will loop until $4 is 0, which means $4 needs to be 0 is $3 == $2, and 1 if $3 != $2
+# this is simply 1 - ($1 == $2)
+mov $3 $4
+eq $4 $2
+
+
+
+# we loop against $4, which loops until 
+
+sloop $4
+
+    # print the current char and increment by 1
+    printc $3
+    addi $3 1
+
+    # check if the current char is equal to the end index, set 4 to 0 if they are equal and 1 otherwise
+    mov $3 $4
+    eq $4 $2
+
+eloop $4
