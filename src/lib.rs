@@ -118,6 +118,8 @@ pub fn byte_to_bf(byte: u8, negative: bool) -> String {
 
 // converts the "weird assembly" into br**nfuck code.
 pub fn weird_assembly_to_bf(assembly: &str) -> String {
+    let mut memory_pointer: i32 = 0;
+
     let code = assembly
         .lines()
         .filter(|c| !c.is_empty())
@@ -133,7 +135,7 @@ pub fn weird_assembly_to_bf(assembly: &str) -> String {
             let command = parsed_line[0];
             let args = &parsed_line[1..];
 
-            asm_instruction_to_bf(command, args)
+            asm_instruction_to_bf(command, args, &mut memory_pointer)
         })
         .collect::<Vec<String>>();
 
@@ -149,8 +151,19 @@ fn asm_parse_mem_access(reference: &str) -> usize {
 }
 
 // execute the passed code at the specified memory location
-fn asm_go_to_mem_wrapper(mem: usize, code: &str) -> String {
-    ">".repeat(mem) + code + &"<".repeat(mem)
+fn asm_go_to_mem_wrapper(mem: usize, code: &str, memory_pointer: &mut i32) -> String {
+    let to = mem as i32;
+    let from: i32 = *memory_pointer;
+    let difference: i32 = to - from;
+
+    let repeat_character = match difference.signum() {
+        -1 => "<",
+        _ => ">",
+    };
+
+    *memory_pointer = to;
+
+    repeat_character.repeat(difference.abs().try_into().unwrap()) + code
 }
 
 // clears the current memory
@@ -159,8 +172,9 @@ fn bf_clear_register() -> String {
 }
 
 // given an instruction and it's parameters, returns the generated bf code for it.
-fn asm_instruction_to_bf(instruction: &str, args: &[&str]) -> String {
+fn asm_instruction_to_bf(instruction: &str, args: &[&str], memory_pointer: &mut i32) -> String {
     match instruction {
+        "" => String::from(""),
         "seti" => {
             let destination = asm_parse_mem_access(args[0]);
             let value = args[1].parse::<u8>().unwrap();
@@ -168,18 +182,19 @@ fn asm_instruction_to_bf(instruction: &str, args: &[&str]) -> String {
             asm_go_to_mem_wrapper(
                 destination,
                 &(bf_clear_register() + &byte_to_bf(value, false)),
+                memory_pointer,
             )
         }
         "printc" => {
             let destination = asm_parse_mem_access(args[0]);
 
-            asm_go_to_mem_wrapper(destination, ".")
+            asm_go_to_mem_wrapper(destination, ".", memory_pointer)
         }
         "addi" => {
             let destination = asm_parse_mem_access(args[0]);
             let value = args[1].parse::<u8>().unwrap();
 
-            asm_go_to_mem_wrapper(destination, &byte_to_bf(value, false))
+            asm_go_to_mem_wrapper(destination, &byte_to_bf(value, false), memory_pointer)
         }
         "addv" => {
             let destination = asm_parse_mem_access(args[0]);
@@ -190,17 +205,17 @@ fn asm_instruction_to_bf(instruction: &str, args: &[&str]) -> String {
             // adds the value of target to the destination
             let code = Vec::from([
                 // clear the temp byte
-                asm_go_to_mem_wrapper(temp_byte, &bf_clear_register()),
+                asm_go_to_mem_wrapper(temp_byte, &bf_clear_register(), memory_pointer),
                 // move the value of target into the temp
                 // temp_byte = x, x = 0
-                asm_go_to_mem_wrapper(value_memory, "["),
-                asm_go_to_mem_wrapper(temp_byte, "+"),
-                asm_go_to_mem_wrapper(value_memory, "-]"),
+                asm_go_to_mem_wrapper(value_memory, "[", memory_pointer),
+                asm_go_to_mem_wrapper(temp_byte, "+", memory_pointer),
+                asm_go_to_mem_wrapper(value_memory, "-]", memory_pointer),
                 // add the temp_byte to register x and destination simultaneously
-                asm_go_to_mem_wrapper(temp_byte, "["),
-                asm_go_to_mem_wrapper(destination, "+"),
-                asm_go_to_mem_wrapper(value_memory, "+"),
-                asm_go_to_mem_wrapper(temp_byte, "-]"),
+                asm_go_to_mem_wrapper(temp_byte, "[", memory_pointer),
+                asm_go_to_mem_wrapper(destination, "+", memory_pointer),
+                asm_go_to_mem_wrapper(value_memory, "+", memory_pointer),
+                asm_go_to_mem_wrapper(temp_byte, "-]", memory_pointer),
             ]);
 
             code.join("")
@@ -209,7 +224,7 @@ fn asm_instruction_to_bf(instruction: &str, args: &[&str]) -> String {
             let destination = asm_parse_mem_access(args[0]);
             let value = args[1].parse::<u8>().unwrap();
 
-            asm_go_to_mem_wrapper(destination, &byte_to_bf(value, true))
+            asm_go_to_mem_wrapper(destination, &byte_to_bf(value, true), memory_pointer)
         }
         "subv" => {
             let destination = asm_parse_mem_access(args[0]);
@@ -220,17 +235,17 @@ fn asm_instruction_to_bf(instruction: &str, args: &[&str]) -> String {
             // adds the value of target to the destination
             let code = Vec::from([
                 // clear the temp byte
-                asm_go_to_mem_wrapper(temp_byte, &bf_clear_register()),
+                asm_go_to_mem_wrapper(temp_byte, &bf_clear_register(), memory_pointer),
                 // move the value of target into the temp
                 // temp_byte = x, x = 0
-                asm_go_to_mem_wrapper(value_memory, "["),
-                asm_go_to_mem_wrapper(temp_byte, "+"),
-                asm_go_to_mem_wrapper(value_memory, "-]"),
+                asm_go_to_mem_wrapper(value_memory, "[", memory_pointer),
+                asm_go_to_mem_wrapper(temp_byte, "+", memory_pointer),
+                asm_go_to_mem_wrapper(value_memory, "-]", memory_pointer),
                 // set destination to destination - x
-                asm_go_to_mem_wrapper(temp_byte, "["),
-                asm_go_to_mem_wrapper(destination, "-"),
-                asm_go_to_mem_wrapper(value_memory, "+"),
-                asm_go_to_mem_wrapper(temp_byte, "-]"),
+                asm_go_to_mem_wrapper(temp_byte, "[", memory_pointer),
+                asm_go_to_mem_wrapper(destination, "-", memory_pointer),
+                asm_go_to_mem_wrapper(value_memory, "+", memory_pointer),
+                asm_go_to_mem_wrapper(temp_byte, "-]", memory_pointer),
             ]);
 
             code.join("")
@@ -247,19 +262,19 @@ fn asm_instruction_to_bf(instruction: &str, args: &[&str]) -> String {
             let temp_byte = 0;
 
             let code = Vec::from([
-                asm_go_to_mem_wrapper(temp_byte, &bf_clear_register()), // clear the temp byte
-                asm_go_to_mem_wrapper(x, &bf_clear_register()), // clear x, the byte that is overwritten
+                asm_go_to_mem_wrapper(temp_byte, &bf_clear_register(), memory_pointer), // clear the temp byte
+                asm_go_to_mem_wrapper(x, &bf_clear_register(), memory_pointer), // clear x, the byte that is overwritten
                 // set both x and temp to the value of y, clear y in the process
-                asm_go_to_mem_wrapper(y, "["),
-                asm_go_to_mem_wrapper(x, "+"),
-                asm_go_to_mem_wrapper(temp_byte, "+"),
-                asm_go_to_mem_wrapper(y, "-"),
-                asm_go_to_mem_wrapper(y, "]"),
+                asm_go_to_mem_wrapper(y, "[", memory_pointer),
+                asm_go_to_mem_wrapper(x, "+", memory_pointer),
+                asm_go_to_mem_wrapper(temp_byte, "+", memory_pointer),
+                asm_go_to_mem_wrapper(y, "-", memory_pointer),
+                asm_go_to_mem_wrapper(y, "]", memory_pointer),
                 // set y to the value of temp0, clearing temp0 in the process
-                asm_go_to_mem_wrapper(temp_byte, "["),
-                asm_go_to_mem_wrapper(y, "+"),
-                asm_go_to_mem_wrapper(temp_byte, "-"),
-                asm_go_to_mem_wrapper(temp_byte, "]"),
+                asm_go_to_mem_wrapper(temp_byte, "[", memory_pointer),
+                asm_go_to_mem_wrapper(y, "+", memory_pointer),
+                asm_go_to_mem_wrapper(temp_byte, "-", memory_pointer),
+                asm_go_to_mem_wrapper(temp_byte, "]", memory_pointer),
             ]);
 
             code.join("")
@@ -274,29 +289,29 @@ fn asm_instruction_to_bf(instruction: &str, args: &[&str]) -> String {
             // note: on the rhs, x and y refer to the original values of x and y
             let code = Vec::from([
                 // clear both temps
-                asm_go_to_mem_wrapper(temp0, &bf_clear_register()),
-                asm_go_to_mem_wrapper(temp1, &bf_clear_register()),
+                asm_go_to_mem_wrapper(temp0, &bf_clear_register(), memory_pointer),
+                asm_go_to_mem_wrapper(temp1, &bf_clear_register(), memory_pointer),
                 // set temp1 = x, and then set x = 1
-                asm_go_to_mem_wrapper(x, "["),
-                asm_go_to_mem_wrapper(temp1, "+"),
-                asm_go_to_mem_wrapper(x, "-]+"),
+                asm_go_to_mem_wrapper(x, "[", memory_pointer),
+                asm_go_to_mem_wrapper(temp1, "+", memory_pointer),
+                asm_go_to_mem_wrapper(x, "-]+", memory_pointer),
                 // set y = 0, now temp1 = x - y and temp0 = y
-                asm_go_to_mem_wrapper(y, "["),
-                asm_go_to_mem_wrapper(temp1, "-"),
-                asm_go_to_mem_wrapper(temp0, "+"),
-                asm_go_to_mem_wrapper(y, "-]"),
+                asm_go_to_mem_wrapper(y, "[", memory_pointer),
+                asm_go_to_mem_wrapper(temp1, "-", memory_pointer),
+                asm_go_to_mem_wrapper(temp0, "+", memory_pointer),
+                asm_go_to_mem_wrapper(y, "-]", memory_pointer),
                 // set y = temp0 and temp0 to 0
                 // note for future me: this code shouldn't be removed, as it restores the value of
                 // y above. The code above must has to zero out y as it must set temp0 to y.
-                asm_go_to_mem_wrapper(temp0, "["),
-                asm_go_to_mem_wrapper(y, "+"),
-                asm_go_to_mem_wrapper(temp0, "-]"),
+                asm_go_to_mem_wrapper(temp0, "[", memory_pointer),
+                asm_go_to_mem_wrapper(y, "+", memory_pointer),
+                asm_go_to_mem_wrapper(temp0, "-]", memory_pointer),
                 // if temp1 is 0, than this does nothing. otherwise, subtract one from x.
                 // this means that if x-y == 0, x is set to 1, otherwise it is set to 1. y remains equal to y. Success!
-                asm_go_to_mem_wrapper(temp1, "["),
-                asm_go_to_mem_wrapper(x, "-"),
-                asm_go_to_mem_wrapper(temp1, &bf_clear_register()),
-                asm_go_to_mem_wrapper(temp1, "]"),
+                asm_go_to_mem_wrapper(temp1, "[", memory_pointer),
+                asm_go_to_mem_wrapper(x, "-", memory_pointer),
+                asm_go_to_mem_wrapper(temp1, &bf_clear_register(), memory_pointer),
+                asm_go_to_mem_wrapper(temp1, "]", memory_pointer),
             ]);
 
             code.join("")
@@ -304,12 +319,12 @@ fn asm_instruction_to_bf(instruction: &str, args: &[&str]) -> String {
         "sloop" => {
             let destination = asm_parse_mem_access(args[0]);
 
-            asm_go_to_mem_wrapper(destination, "[")
+            asm_go_to_mem_wrapper(destination, "[", memory_pointer)
         }
         "eloop" => {
             let destination = asm_parse_mem_access(args[0]);
 
-            asm_go_to_mem_wrapper(destination, "]")
+            asm_go_to_mem_wrapper(destination, "]", memory_pointer)
         }
         "inv" => {
             let destination = asm_parse_mem_access(args[0]);
@@ -321,9 +336,9 @@ fn asm_instruction_to_bf(instruction: &str, args: &[&str]) -> String {
             // x is now (1, 0)
             // finished!
             let code: Vec<String> = Vec::from([
-                asm_go_to_mem_wrapper(temp_byte, &bf_clear_register()),
-                asm_go_to_mem_wrapper(destination, "-[++"),
-                asm_go_to_mem_wrapper(temp_byte, "]"),
+                asm_go_to_mem_wrapper(temp_byte, &bf_clear_register(), memory_pointer),
+                asm_go_to_mem_wrapper(destination, "-[++", memory_pointer),
+                asm_go_to_mem_wrapper(temp_byte, "]", memory_pointer),
             ]);
             // todo: add ]++
 
