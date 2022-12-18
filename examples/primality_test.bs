@@ -13,17 +13,20 @@ mov $3 $4
 eq $4 $2
 
 
+seti $5 57
 
 # we loop against $4, which loops until 
 
-sloop $4
+sloop $5
 
     # print the current char and increment by 1
     printc $3
     addi $3 1
 
     # check if the current char is equal to the end index, set 4 to 0 if they are equal and 1 otherwise
-    mov $3 $4
-    eq $4 $2
+    # mov $3 $4
+    # eq $4 $2
 
-eloop $4
+    subi $5 1
+
+eloop $5

@@ -15,7 +15,7 @@ fn main() {
             let file =
                 fs::read_to_string(&file).expect(format!("Error reading file {}", &file).as_str());
 
-            bf_compiler::execute_bf(file.as_str());
+            bf_compiler::execute_bf(file.as_str(), false).unwrap();
         }
         "compile" => {
             let file = std::env::args()

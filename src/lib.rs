@@ -6,13 +6,14 @@ use std::collections::HashMap;
 // https://esolangs.org/wiki/Brainfuck_algorithms
 
 //TODO: maybe have some sort of opaque type to differentiate pointer_index and code_index
-pub fn execute_bf(code: &str) {
+pub fn execute_bf(code: &str, return_output: bool) -> Result<Option<String>, ()> {
     let mut memory: [u8; 100] = [0; 100];
     let mut pointer_index: usize = 0;
     let mut code_index: usize = 0;
 
     let brace_map = get_matching_braces_location(code);
     let code: Vec<char> = code.chars().collect();
+    let mut code_output = String::from("");
 
     while code_index < code.len() {
         // println!("[{}] {}", code_index, code[code_index]);
@@ -26,21 +27,40 @@ pub fn execute_bf(code: &str) {
             }
             '+' => memory[pointer_index] = memory[pointer_index].wrapping_add(1),
             '-' => memory[pointer_index] = memory[pointer_index].wrapping_sub(1),
-            '.' => print!("{}", (memory[pointer_index]) as char),
+            '.' => {
+                let character = memory[pointer_index] as char;
+                if return_output {
+                    code_output.push(character);
+                } else {
+                    print!("{}", (memory[pointer_index]) as char)
+                }
+            }
             ',' => todo!(),
             '[' => {
                 if memory[pointer_index] == 0 {
-                    let closing_brace_index = brace_map[&code_index];
+                    let brace_map = (brace_map.clone())?;
+                    let closing_brace_index = brace_map.get(&code_index);
 
-                    code_index = closing_brace_index;
+                    let closing_brace_index = match closing_brace_index {
+                        Some(value) => value,
+                        None => return Err(()),
+                    };
+
+                    code_index = *closing_brace_index;
                 }
             }
 
             ']' => {
                 if memory[pointer_index] != 0 {
-                    let opening_brace_index = brace_map[&code_index];
+                    let brace_map = (brace_map.clone())?;
+                    let opening_brace_index = brace_map.get(&code_index);
 
-                    code_index = opening_brace_index;
+                    let opening_brace_index = match opening_brace_index {
+                        Some(value) => value,
+                        None => return Err(()),
+                    };
+
+                    code_index = *opening_brace_index;
                 }
             }
             _ => {}
@@ -48,25 +68,48 @@ pub fn execute_bf(code: &str) {
 
         code_index += 1;
     }
+
+    if return_output {
+        Ok(Some(code_output))
+    } else {
+        Ok(None)
+    }
 }
 
-fn get_matching_braces_location(code: &str) -> HashMap<usize, usize> {
+fn get_matching_braces_location(code: &str) -> Result<HashMap<usize, usize>, ()> {
     let mut brace_index_stack: Vec<usize> = vec![];
 
     let mut brace_map: HashMap<usize, usize> = HashMap::new();
 
-    code.chars().enumerate().for_each(|(i, char)| match char {
-        '[' => brace_index_stack.push(i),
-        ']' => {
-            let matching_start_brace = brace_index_stack.pop().unwrap();
-            // (matching_start_brace, i) is a matching pair of braces
-            brace_map.insert(matching_start_brace, i);
-            brace_map.insert(i, matching_start_brace);
-        }
-        _ => {}
-    });
+    code.chars()
+        .enumerate()
+        .map(|(i, char)| {
+            match char {
+                '[' => Ok(brace_index_stack.push(i)),
+                ']' => {
+                    let matching_start_brace = brace_index_stack.pop();
 
-    brace_map
+                    let matching_start_brace = match matching_start_brace {
+                        None => Err(()),
+                        Some(value) => Ok(value),
+                    };
+
+                    matching_start_brace.map(|value| {
+                        // (matching_start_brace, i) is a matching pair of braces
+
+                        brace_map.insert(value, i);
+                        brace_map.insert(i, value);
+                    })
+                }
+                _ => Ok(()),
+            }
+        })
+        .for_each(|v| match v {
+            Ok(v) => v,
+            Err(v) => v,
+        });
+
+    Ok(brace_map)
 }
 
 // generates the bf code for creating and printing a string
