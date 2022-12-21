@@ -44,3 +44,7 @@ _Note: when the value of a cell overflows or underflows, it wraps back around_
 | `addi $x y` | Adds the byte `y` to the memory located at `x`.    |
 
 TODO: the rest of them
+
+## Blog thingy
+
+First, I thought that directly compiling a more complex language akin to python or js would be way too complicated. I needed some sort of intermediate abstraction. I settled on something that I imagined was like assembly, even though I had never directly used assembly.
