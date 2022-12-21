@@ -1,0 +1,61 @@
+# testing of every single instruction
+ # test whitespace
+  # waka
+	# waka
+
+seti $0 2
+seti $0 104
+printc $0
+
+
+seti $0 74
+seti $1 15
+seti $2 12
+
+addv $0 $1
+addv $0 $2
+addv $0 $37
+
+printc $0
+
+seti $1 7
+mov $1 $2
+seti $1 255
+mov $2 $1
+
+sloop $1
+    addi $0 1
+    subi $1 1
+eloop $1
+
+printc $0
+
+seti $1 1
+sloop $1
+    printc $0
+
+    seti $1 0
+eloop $1
+
+seti $0 56
+seti $1 57
+seti $2 111
+
+eq $0 $1
+addv $0 $2
+
+printc $0
+
+
+seti $2 100
+seti $3 100
+
+eq $2 $3
+inv $2
+inv $2
+
+addi $2 9
+
+printc $2
+
+printc $999

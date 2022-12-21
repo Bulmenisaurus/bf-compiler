@@ -156,3 +156,49 @@ pub fn str_to_bf(string: &str) -> String {
 
     code.join("")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const TEST_FILE: &'static str = include_str!("./test.bs");
+
+    #[test]
+    fn bracket_check() {
+        assert!(execute_bf("...[][", true).is_err());
+        assert!(execute_bf("[[]]", true).is_ok());
+    }
+
+    #[test]
+    fn instruction_check() {
+        let bf_code = bf_asm::weird_assembly_to_bf(TEST_FILE);
+
+        let output = execute_bf(&bf_code, true);
+
+        let output = match output {
+            Ok(output) => output,
+            Err(_) => panic!("Unable to compile asm to bf"),
+        };
+
+        let output = match output {
+            Some(output) => output,
+            None => panic!("No output received :("),
+        };
+
+        assert_eq!(output, String::from("hello\n\0"))
+    }
+
+    #[test]
+    fn all_ascii() {
+        let bf_code = ".+[.+]";
+        let output = execute_bf(bf_code, true).unwrap().unwrap();
+
+        let mut exepected_output = String::new();
+
+        for i in 0..=255u8 {
+            exepected_output.push(i as char);
+        }
+
+        assert_eq!(output, exepected_output)
+    }
+}
