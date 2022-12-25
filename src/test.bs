@@ -3,6 +3,9 @@
   # waka
 	# waka
 
+readc $0
+printc $0
+
 seti $0 2
 seti $0 104
 printc $0

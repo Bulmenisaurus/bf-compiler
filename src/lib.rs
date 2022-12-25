@@ -1,4 +1,9 @@
-use std::collections::HashMap;
+use console::Term;
+use std::{
+    collections::HashMap,
+    io::{self, Write},
+};
+
 mod bf_asm;
 
 pub use bf_asm::weird_assembly_to_bf;
@@ -11,6 +16,9 @@ pub use bf_asm::weird_assembly_to_bf;
 //TODO: maybe have some sort of opaque type to differentiate pointer_index and code_index
 pub fn execute_bf(code: &str, return_output: bool) -> Result<Option<String>, ()> {
     let mut memory: [u8; 100] = [0; 100];
+    //TODO: is calling this function whenever we run bf expensive?
+    let terminal = Term::stdout();
+
     let mut pointer_index: usize = 0;
     let mut code_index: usize = 0;
 
@@ -35,10 +43,13 @@ pub fn execute_bf(code: &str, return_output: bool) -> Result<Option<String>, ()>
                 if return_output {
                     code_output.push(character);
                 } else {
-                    print!("{}", (memory[pointer_index]) as char)
+                    print!("{}", (memory[pointer_index]) as char);
+                    io::stdout().flush().expect("Failed to flush output");
                 }
             }
-            ',' => todo!(),
+            ',' => {
+                memory[pointer_index] = terminal.read_char().expect("Failed to read a char") as u8
+            }
             '[' => {
                 if memory[pointer_index] == 0 {
                     let brace_map = (brace_map.clone())?;
@@ -173,6 +184,7 @@ mod tests {
     fn instruction_check() {
         let bf_code = bf_asm::weird_assembly_to_bf(TEST_FILE);
 
+        println!("Note: this test requires you to enter a newline");
         let output = execute_bf(&bf_code, true);
 
         let output = match output {
@@ -185,7 +197,7 @@ mod tests {
             None => panic!("No output received :("),
         };
 
-        assert_eq!(output, String::from("hello\n\0"))
+        assert_eq!(output, String::from("\nhello\n\0"))
     }
 
     #[test]

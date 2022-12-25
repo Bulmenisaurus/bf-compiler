@@ -80,6 +80,11 @@ fn asm_instruction_to_bf(instruction: &str, args: &[&str], memory_pointer: &mut 
 
             asm_go_to_mem_wrapper(destination, ".", memory_pointer)
         }
+        "readc" => {
+            let destination = asm_parse_mem_access(args[0]);
+
+            asm_go_to_mem_wrapper(destination, ",", memory_pointer)
+        }
         "addi" => {
             let destination = asm_parse_mem_access(args[0]);
             let value = args[1].parse::<u8>().unwrap();
