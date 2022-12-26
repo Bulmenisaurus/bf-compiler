@@ -39,7 +39,7 @@ To compile a `.bs` file into a `.b` one, simply run `cargo run --release compile
 
 Then, to run a `.b` file use the run command: `cargo run --release run ./path/to/file.b`.
 
-If making changes, you can run the tests with `cargo test -- --nocapture`. Be sure to follow the printed instructions, if any
+If making changes, you can run the tests with `cargo test -- --nocapture`. Be sure to follow the printed instructions, if any.
 
 ## The instruction set
 
