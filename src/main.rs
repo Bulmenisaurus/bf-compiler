@@ -43,8 +43,18 @@ fn main() {
             // here rust can probably produce a better error message than I can
             fs::write(new_file_name, bf).unwrap();
         }
+        "string" => {
+            let string = std::env::args()
+                .nth(2)
+                .expect("Expected a string to display");
+
+            println!("{}", bf::str_to_bf(&string))
+        }
         name => {
-            eprintln!("Unknown command {}, expected `run` or `compile`", name);
+            eprintln!(
+                "Unknown command {}, expected `run`, `compile` or `string`",
+                name
+            );
             process::exit(1)
         }
     }
