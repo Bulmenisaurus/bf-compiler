@@ -1,4 +1,4 @@
-pub use bf_compiler;
+use bf_compiler;
 // find the minimal program which prints a certain string
 
 // dfs on all possible bf programs

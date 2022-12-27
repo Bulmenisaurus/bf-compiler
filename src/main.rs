@@ -1,4 +1,6 @@
-pub use bf_compiler;
+mod bf;
+mod bf_asm;
+
 use std::ffi::OsString;
 
 use std::path::Path;
@@ -15,7 +17,7 @@ fn main() {
             let file =
                 fs::read_to_string(&file).expect(format!("Error reading file {}", &file).as_str());
 
-            bf_compiler::execute_bf(file.as_str(), false).unwrap();
+            bf::execute_bf(file.as_str(), false).unwrap();
         }
         "compile" => {
             let file = std::env::args()
@@ -34,7 +36,7 @@ fn main() {
             let file =
                 fs::read_to_string(&file).expect(format!("Error reading file {}", &file).as_str());
 
-            let bf = bf_compiler::weird_assembly_to_bf(file.as_str());
+            let bf = bf_asm::weird_assembly_to_bf(file.as_str());
 
             let new_file_name = format!("./{}.b", filename);
 
@@ -45,5 +47,52 @@ fn main() {
             eprintln!("Unknown command {}, expected `run` or `compile`", name);
             process::exit(1)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const TEST_FILE: &'static str = include_str!("./test.bs");
+
+    #[test]
+    fn bracket_check() {
+        assert!(bf::execute_bf("...[][", true).is_err());
+        assert!(bf::execute_bf("[[]]", true).is_ok());
+    }
+
+    #[test]
+    fn instruction_check() {
+        let bf_code = bf_asm::weird_assembly_to_bf(TEST_FILE);
+
+        println!("Note: this test requires you to enter a newline");
+        let output = bf::execute_bf(&bf_code, true);
+
+        let output = match output {
+            Ok(output) => output,
+            Err(_) => panic!("Unable to compile asm to bf"),
+        };
+
+        let output = match output {
+            Some(output) => output,
+            None => panic!("No output received :("),
+        };
+
+        assert_eq!(output, String::from("\nhello\n\0"))
+    }
+
+    #[test]
+    fn all_ascii() {
+        let bf_code = ".+[.+]";
+        let output = bf::execute_bf(bf_code, true).unwrap().unwrap();
+
+        let mut exepected_output = String::new();
+
+        for i in 0..=255u8 {
+            exepected_output.push(i as char);
+        }
+
+        assert_eq!(output, exepected_output)
     }
 }
