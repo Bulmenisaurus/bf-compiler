@@ -1,0 +1,5 @@
+# https://github.com/github/linguist/blob/master/docs/overrides.md
+
+*.bs linguist-language=Text
+*.bc linguist-language=Text
+*.b  linguist-language=Brainfuck
