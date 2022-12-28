@@ -1,0 +1,11 @@
+var a = 65
+var BSLASJ = 64
+
+
+print a
+print BSLASJ
+
+drop a
+drop BSLASJ
+
+print 10
