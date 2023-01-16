@@ -1,49 +1,20 @@
 use super::bfc_parser;
 use super::memory_manager;
 
-use bfc_parser::Statement;
+use bfc_parser::{parse, BFCStatement};
 
-pub fn compile_bfc(bfc_code: &str) -> String {
-    let tokens = bfc_parser::tokenize(bfc_code);
-    let parsed_code = bfc_parser::parse(tokens);
+fn compile_statement(statement: &BFCStatement) -> String {
+    todo!();
+}
 
-    let mut memory = memory_manager::MemoryManager {
-        memory_map: vec![None; 10],
-    };
+pub fn compile_bfc(bfc_code: &str) -> Result<String, String> {
+    let parsed_code = parse(bfc_code)?;
 
-    let bf_code: String = parsed_code
-        .iter()
-        .map(|statement| match statement {
-            Statement::AssignTo(variable, value) => {
-                let memory_pointer = memory.allocate(variable.to_string(), 1).unwrap();
+    // let compiled_statements = parsed_code
+    //     .iter()
+    //     .map(|statement| compile_statement(statement))
+    //     .collect::<Vec<String>>();
 
-                Some(format!("seti ${} {};", memory_pointer, value))
-            }
-            Statement::PrintVar(variable) => {
-                let memory_pointer = memory
-                    .get_memory_location(variable.to_string())
-                    .expect(&format!("Unable to fine variable {}", variable));
-
-                Some(format!("printc ${};", memory_pointer))
-            }
-            Statement::PrintLiteral(literal) => {
-                let temp_value_pointer = memory.allocate("temp".to_string(), 1).unwrap();
-                memory.deallocate("temp");
-
-                Some(format!(
-                    "seti ${} {};\nprintc ${}\nseti ${} 0;",
-                    temp_value_pointer, literal, temp_value_pointer, temp_value_pointer
-                ))
-            }
-            Statement::DropVar(variable) => {
-                memory.deallocate(variable);
-
-                None
-            }
-        })
-        .filter_map(|i| i)
-        .collect::<Vec<String>>()
-        .join("\n");
-
-    bf_code
+    // compiled_statements.join("")
+    Ok(String::default())
 }

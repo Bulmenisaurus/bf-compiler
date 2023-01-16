@@ -1,54 +1,133 @@
-//TODO: make this not terrible
-
-pub enum Statement {
-    AssignTo(String, String),
-    PrintVar(String),
-    PrintLiteral(String),
-    DropVar(String),
+use super::code_traverser::CodeTraverser;
+use std::collections::HashMap;
+pub enum BFCType {
+    Byte,
+    Int,
 }
 
-pub fn tokenize<'a>(bfc_code: &'a str) -> Vec<Vec<&'a str>> {
-    bfc_code
-        .split("\n")
-        .filter_map(|line| {
-            let stripped = line.trim();
-
-            if stripped.is_empty() {
-                None
-            } else {
-                Some(stripped)
-            }
-        })
-        .map(|code| code.split(" ").collect())
-        .collect()
+#[derive(Debug)]
+pub enum BFCStatement {
+    Comment {
+        text: String,
+    },
+    VariableAssignment {
+        variable_name: String,
+        variable_type: String,  /*BFCType*/
+        variable_value: String, /*Box<BFCStatement>*/
+    },
 }
 
-pub fn parse<'a>(tokens: Vec<Vec<&'a str>>) -> Vec<Statement> {
-    tokens
-        .iter()
-        .map(|tokens| {
-            // TODO: make this not suck
-            match tokens[0] {
-                "var" => Statement::AssignTo(String::from(tokens[1]), String::from(tokens[3])),
-                "print" => {
-                    let value = tokens[1];
-                    let is_number = value.chars().all(|c| c.is_ascii_digit());
-                    // let is_string = value.chars().nth(0).unwrap() == '\''
-                    // && value.chars().next_back().unwrap() == '\'';
+#[derive(PartialEq, Eq)]
+enum BraceType {
+    Parentheses, // ()
+    Box,         // []
+    Mustache,    // {}
+}
 
-                    if is_number {
-                        Statement::PrintLiteral(value.to_string())
+fn build_brace_map<'a>(bfc_code: &'a str) -> Result<HashMap<usize, usize>, String> {
+    let mut brace_map: HashMap<usize, usize> = HashMap::new();
+    let mut brace_stack: Vec<(BraceType, usize)> = Vec::new();
+
+    for (i, c) in bfc_code.char_indices() {
+        match c {
+            '(' => brace_stack.push((BraceType::Parentheses, i)),
+            '[' => brace_stack.push((BraceType::Box, i)),
+            '{' => brace_stack.push((BraceType::Mustache, i)),
+
+            ')' => {
+                let matching_brace = brace_stack.pop();
+
+                if let Some((brace_type, index)) = matching_brace {
+                    // check if the braces match
+                    if brace_type != BraceType::Parentheses {
+                        return Err("Braces types do not match".to_string());
                     } else {
-                        Statement::PrintVar(value.to_string())
+                        brace_map.insert(i, index);
+                        brace_map.insert(index, i);
                     }
+                } else {
+                    return Err("No closing brace found".to_string());
                 }
-                "drop" => {
-                    let variable = tokens[1];
-                    Statement::DropVar(variable.to_string())
-                }
-
-                other => unimplemented!("{}", other),
             }
-        })
-        .collect()
+
+            ']' => {
+                let matching_brace = brace_stack.pop();
+
+                if let Some((brace_type, index)) = matching_brace {
+                    // check if the braces match
+                    if brace_type != BraceType::Box {
+                        return Err("Brace types to not match".to_string());
+                    } else {
+                        brace_map.insert(i, index);
+                        brace_map.insert(index, i);
+                    }
+                } else {
+                    return Err("No closing brace found".to_string());
+                }
+            }
+
+            '}' => {
+                let matching_brace = brace_stack.pop();
+
+                if let Some((brace_type, index)) = matching_brace {
+                    // check if the braces match
+                    if brace_type != BraceType::Mustache {
+                        return Err("String types do not match:".to_string());
+                    } else {
+                        brace_map.insert(i, index);
+                        brace_map.insert(index, i);
+                    }
+                } else {
+                    return Err("No closing brace found".to_string());
+                }
+            }
+
+            _ => {}
+        };
+    }
+
+    Ok(brace_map)
+}
+
+fn comment_parser<'a>(mut bfc_code: CodeTraverser) -> Result<BFCStatement, String> {
+    bfc_code.skip_whitespace()?;
+    bfc_code.consume_str("//")?;
+    let comment_text = bfc_code.read_until('\n')?;
+    println!("Comment: {:?}", comment_text);
+
+    Ok(BFCStatement::Comment {
+        text: comment_text.to_string(),
+    })
+}
+
+fn variable_assignment_parser<'a>(mut bfc_code: CodeTraverser) -> Result<BFCStatement, String> {
+    let variable_type = bfc_code.read_word()?.to_string();
+    let variable_name = bfc_code.read_word()?.to_string();
+    bfc_code.skip_whitespace()?;
+    bfc_code.consume_str("=")?;
+    bfc_code.skip_whitespace()?;
+
+    let variable_value = bfc_code.read_until(';')?.to_string();
+
+    println!("7");
+    Ok(BFCStatement::VariableAssignment {
+        variable_name: variable_name,
+        variable_type: variable_type,
+        variable_value: variable_value,
+    })
+}
+
+pub fn parse<'a>(bfc_code: &'a str) -> Result<Vec<BFCStatement>, String> {
+    let brace_map = build_brace_map(bfc_code)?;
+
+    let code = CodeTraverser {
+        code: bfc_code,
+        current_char_index: 0,
+    };
+
+    println!("Parsing comments!");
+    println!("{:?}", variable_assignment_parser(code)?);
+
+    println!("{:?}", brace_map);
+    Ok(vec![])
 }

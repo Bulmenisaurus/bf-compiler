@@ -1,5 +1,6 @@
 mod bf;
 mod bf_asm;
+mod bf_lang;
 
 use std::ffi::OsString;
 
@@ -19,7 +20,7 @@ fn main() {
 
             bf::execute_bf(file.as_str(), false).unwrap();
         }
-        "compile" => {
+        "assemble" => {
             let file = std::env::args()
                 .nth(2)
                 .expect("Expected a bf asm file to compile");
@@ -39,6 +40,30 @@ fn main() {
             let bf = bf_asm::weird_assembly_to_bf(file.as_str());
 
             let new_file_name = format!("./{}.b", filename);
+
+            // here rust can probably produce a better error message than I can
+            fs::write(new_file_name, bf).unwrap();
+        }
+        "compile" => {
+            let file = std::env::args()
+                .nth(2)
+                .expect("Expected a bf asm file to compile");
+
+            let default_file_name = &OsString::from("./output.bl");
+
+            let filename = Path::file_stem(&Path::new(file.as_str())).unwrap_or_else(|| {
+
+            eprintln!("Unable to get the filename from given file `{}`, saving to `./output.bs`", file.as_str());
+
+            default_file_name
+             }).to_str().expect("Unable to convert filename OsString to a regular string because rust for some reason has 400 different strings whose conversions can fail");
+
+            let file =
+                fs::read_to_string(&file).expect(format!("Error reading file {}", &file).as_str());
+
+            let bf = bf_lang::compile_bfc(file.as_str()).unwrap();
+
+            let new_file_name = format!("./{}.bs", filename);
 
             // here rust can probably produce a better error message than I can
             fs::write(new_file_name, bf).unwrap();
