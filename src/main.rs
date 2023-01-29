@@ -47,7 +47,7 @@ fn main() {
         "compile" => {
             let file = std::env::args()
                 .nth(2)
-                .expect("Expected a bf asm file to compile");
+                .expect("Expected a bf lang file to compile");
 
             let default_file_name = &OsString::from("./output.bl");
 

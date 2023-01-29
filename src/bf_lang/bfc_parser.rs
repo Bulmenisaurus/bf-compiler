@@ -15,6 +15,10 @@ pub enum BFCStatement {
         variable_type: String,  /*BFCType*/
         variable_value: String, /*Box<BFCStatement>*/
     },
+    FunctionCall {
+        function_name: String,
+        function_parameter: String,
+    },
 }
 
 #[derive(PartialEq, Eq)]
@@ -92,8 +96,7 @@ fn build_brace_map<'a>(bfc_code: &'a str) -> Result<HashMap<usize, usize>, Strin
 fn comment_parser<'a>(mut bfc_code: CodeTraverser) -> Result<BFCStatement, String> {
     bfc_code.skip_whitespace()?;
     bfc_code.consume_str("//")?;
-    let comment_text = bfc_code.read_until('\n')?;
-    println!("Comment: {:?}", comment_text);
+    let comment_text = bfc_code.read_until_char('\n')?;
 
     Ok(BFCStatement::Comment {
         text: comment_text.to_string(),
@@ -107,26 +110,44 @@ fn variable_assignment_parser<'a>(mut bfc_code: CodeTraverser) -> Result<BFCStat
     bfc_code.consume_str("=")?;
     bfc_code.skip_whitespace()?;
 
-    let variable_value = bfc_code.read_until(';')?.to_string();
+    let variable_value = bfc_code.read_until_char(';')?.to_string();
 
-    println!("7");
     Ok(BFCStatement::VariableAssignment {
-        variable_name: variable_name,
-        variable_type: variable_type,
-        variable_value: variable_value,
+        variable_name,
+        variable_type,
+        variable_value,
+    })
+}
+
+fn function_call_parser<'a>(
+    mut bfc_code: CodeTraverser,
+    brace_map: &HashMap<usize, usize>,
+) -> Result<BFCStatement, String> {
+    let function_name = bfc_code.read_word()?.to_string();
+    bfc_code.consume_str_no_skip("(")?;
+    // jump to the matching parentheses
+    let ending_parentheses_index = brace_map.get(&bfc_code.cursor_index).unwrap();
+    let parameter = bfc_code.read_to(*ending_parentheses_index)?;
+
+    Ok(BFCStatement::FunctionCall {
+        function_name: function_name,
+        function_parameter: parameter.to_string(),
     })
 }
 
 pub fn parse<'a>(bfc_code: &'a str) -> Result<Vec<BFCStatement>, String> {
     let brace_map = build_brace_map(bfc_code)?;
 
-    let code = CodeTraverser {
+    let mut code = CodeTraverser {
         code: bfc_code,
-        current_char_index: 0,
+        cursor_index: 0,
     };
 
-    println!("Parsing comments!");
-    println!("{:?}", variable_assignment_parser(code)?);
+    println!("{:?}", code.read_to(5));
+    println!("{:?}", code.current_char());
+
+    // println!("Parsing comments!");
+    // println!("{:?}", function_call_parser(code, &brace_map)?);
 
     println!("{:?}", brace_map);
     Ok(vec![])
