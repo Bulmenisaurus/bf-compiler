@@ -124,9 +124,9 @@ fn function_call_parser<'a>(
     brace_map: &HashMap<usize, usize>,
 ) -> Result<BFCStatement, String> {
     let function_name = bfc_code.read_word()?.to_string();
-    bfc_code.consume_str_no_skip("(")?;
+    bfc_code.consume_str("(")?;
     // jump to the matching parentheses
-    let ending_parentheses_index = brace_map.get(&bfc_code.cursor_index).unwrap();
+    let ending_parentheses_index = brace_map.get(&(bfc_code.cursor_index - 1)).unwrap();
     let parameter = bfc_code.read_to(*ending_parentheses_index)?;
 
     Ok(BFCStatement::FunctionCall {
@@ -138,16 +138,13 @@ fn function_call_parser<'a>(
 pub fn parse<'a>(bfc_code: &'a str) -> Result<Vec<BFCStatement>, String> {
     let brace_map = build_brace_map(bfc_code)?;
 
-    let mut code = CodeTraverser {
+    let code = CodeTraverser {
         code: bfc_code,
         cursor_index: 0,
     };
 
-    println!("{:?}", code.read_to(5));
-    println!("{:?}", code.current_char());
-
-    // println!("Parsing comments!");
-    // println!("{:?}", function_call_parser(code, &brace_map)?);
+    println!("Parsing comments!");
+    println!("{:?}", function_call_parser(code, &brace_map)?);
 
     println!("{:?}", brace_map);
     Ok(vec![])

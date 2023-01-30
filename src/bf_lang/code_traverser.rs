@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 /// Helper struct for navigating the code provided. There some general categories of methods:
 ///  - `look_ahead*` these methods look at the code without changing the position of the cursor
 /// - `skip_ahead*` these methods change the cursor position without returning the code
@@ -138,6 +140,7 @@ impl<'a> CodeTraverser<'a> {
         Ok(&self.code[starting_index..self.cursor_index])
     }
 
+    /// Checks if the next characters are equal to some string, and jumps ahead to `cursor position + length of string`
     pub fn consume_str(&mut self, string: &str) -> Result<(), String> {
         let actual_next_chars = self.read_chars(string.len())?;
 
