@@ -18,7 +18,7 @@ fn main() {
             let file =
                 fs::read_to_string(&file).expect(format!("Error reading file {}", &file).as_str());
 
-            bf::execute_bf(file.as_str(), false).unwrap();
+            bf::execute_bf(file.as_str(), false);
         }
         "assemble" => {
             let file = std::env::args()
@@ -92,27 +92,11 @@ mod tests {
     const TEST_FILE: &'static str = include_str!("./test.bs");
 
     #[test]
-    fn bracket_check() {
-        assert!(bf::execute_bf("...[][", true).is_err());
-        assert!(bf::execute_bf("[[]]", true).is_ok());
-    }
-
-    #[test]
     fn instruction_check() {
         let bf_code = bf_asm::weird_assembly_to_bf(TEST_FILE);
 
         println!("Note: this test requires you to enter a newline");
         let output = bf::execute_bf(&bf_code, true);
-
-        let output = match output {
-            Ok(output) => output,
-            Err(_) => panic!("Unable to compile asm to bf"),
-        };
-
-        let output = match output {
-            Some(output) => output,
-            None => panic!("No output received :("),
-        };
 
         assert_eq!(output, String::from("\nhello\n\0"))
     }
@@ -120,7 +104,7 @@ mod tests {
     #[test]
     fn all_ascii() {
         let bf_code = ".+[.+]";
-        let output = bf::execute_bf(bf_code, true).unwrap().unwrap();
+        let output = bf::execute_bf(bf_code, true);
 
         let mut exepected_output = String::new();
 

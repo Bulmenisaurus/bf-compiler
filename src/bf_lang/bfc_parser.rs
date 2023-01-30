@@ -130,7 +130,7 @@ fn function_call_parser<'a>(
     let parameter = bfc_code.read_to(*ending_parentheses_index)?;
 
     Ok(BFCStatement::FunctionCall {
-        function_name: function_name,
+        function_name,
         function_parameter: parameter.to_string(),
     })
 }

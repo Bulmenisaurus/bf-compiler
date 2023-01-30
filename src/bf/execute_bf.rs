@@ -10,7 +10,7 @@ use std::{
 // https://esolangs.org/wiki/Brainfuck_algorithms
 
 //TODO: maybe have some sort of opaque type to differentiate pointer_index and code_index
-pub fn execute_bf(code: &str, return_output: bool) -> Result<Option<String>, ()> {
+pub fn execute_bf(code: &str, return_output: bool) -> String {
     let mut memory: [u8; 100] = [0; 100];
     //TODO: is calling this function whenever we run bf expensive?
     let terminal = Term::stdout();
@@ -48,13 +48,9 @@ pub fn execute_bf(code: &str, return_output: bool) -> Result<Option<String>, ()>
             }
             '[' => {
                 if memory[pointer_index] == 0 {
-                    let brace_map = (brace_map.clone())?;
-                    let closing_brace_index = brace_map.get(&code_index);
-
-                    let closing_brace_index = match closing_brace_index {
-                        Some(value) => value,
-                        None => return Err(()),
-                    };
+                    let closing_brace_index = brace_map
+                        .get(&code_index)
+                        .expect("Found no closing parentheses");
 
                     code_index = *closing_brace_index;
                 }
@@ -62,13 +58,9 @@ pub fn execute_bf(code: &str, return_output: bool) -> Result<Option<String>, ()>
 
             ']' => {
                 if memory[pointer_index] != 0 {
-                    let brace_map = (brace_map.clone())?;
-                    let opening_brace_index = brace_map.get(&code_index);
-
-                    let opening_brace_index = match opening_brace_index {
-                        Some(value) => value,
-                        None => return Err(()),
-                    };
+                    let opening_brace_index = brace_map
+                        .get(&code_index)
+                        .expect("Found no closing parentheses");
 
                     code_index = *opening_brace_index;
                 }
@@ -79,14 +71,10 @@ pub fn execute_bf(code: &str, return_output: bool) -> Result<Option<String>, ()>
         code_index += 1;
     }
 
-    if return_output {
-        Ok(Some(code_output))
-    } else {
-        Ok(None)
-    }
+    code_output
 }
 
-fn get_matching_braces_location(code: &str) -> Result<HashMap<usize, usize>, ()> {
+fn get_matching_braces_location(code: &str) -> HashMap<usize, usize> {
     let mut brace_index_stack: Vec<usize> = vec![];
 
     let mut brace_map: HashMap<usize, usize> = HashMap::new();
@@ -119,7 +107,7 @@ fn get_matching_braces_location(code: &str) -> Result<HashMap<usize, usize>, ()>
             Err(v) => v,
         });
 
-    Ok(brace_map)
+    brace_map
 }
 
 // generates the bf code for creating and printing a string
