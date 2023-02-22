@@ -3,6 +3,8 @@ mod bf_asm;
 mod bf_lang;
 
 use std::ffi::OsString;
+#[macro_use]
+extern crate lalrpop_util;
 
 use std::path::Path;
 use std::{fs, process};
@@ -45,28 +47,28 @@ fn main() {
             fs::write(new_file_name, bf).unwrap();
         }
         "compile" => {
-            let file = std::env::args()
-                .nth(2)
-                .expect("Expected a bf lang file to compile");
+            // let file = std::env::args()
+            //     .nth(2)
+            //     .expect("Expected a bf lang file to compile");
 
-            let default_file_name = &OsString::from("./output.bl");
+            // let default_file_name = &OsString::from("./output.bl");
 
-            let filename = Path::file_stem(&Path::new(file.as_str())).unwrap_or_else(|| {
+            // let filename = Path::file_stem(&Path::new(file.as_str())).unwrap_or_else(|| {
 
-            eprintln!("Unable to get the filename from given file `{}`, saving to `./output.bs`", file.as_str());
+            // eprintln!("Unable to get the filename from given file `{}`, saving to `./output.bs`", file.as_str());
 
-            default_file_name
-             }).to_str().expect("Unable to convert filename OsString to a regular string because rust for some reason has 400 different strings whose conversions can fail");
+            // default_file_name
+            //  }).to_str().expect("Unable to convert filename OsString to a regular string because rust for some reason has 400 different strings whose conversions can fail");
 
-            let file =
-                fs::read_to_string(&file).expect(format!("Error reading file {}", &file).as_str());
+            // let file =
+            //     fs::read_to_string(&file).expect(format!("Error reading file {}", &file).as_str());
 
-            let bf = bf_lang::compile_bfc(file.as_str()).unwrap();
+            let bf = bf_lang::compile_bfc("");
 
-            let new_file_name = format!("./{}.bs", filename);
+            // let new_file_name = format!("./{}.bs", filename);
 
             // here rust can probably produce a better error message than I can
-            fs::write(new_file_name, bf).unwrap();
+            // fs::write(new_file_name, bf).unwrap();
         }
         "string" => {
             let string = std::env::args()

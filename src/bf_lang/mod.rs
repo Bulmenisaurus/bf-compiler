@@ -1,9 +1,5 @@
-mod bfc_compile;
-mod bfc_parser;
-mod code_traverser;
-mod memory_manager;
+mod compiler;
+mod parser;
 
-pub use bfc_compile::*;
-pub use bfc_parser::*;
-pub use code_traverser::*;
-pub use memory_manager::*;
+pub use compiler::compile_bfc;
+pub use parser::*;
